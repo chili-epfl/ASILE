@@ -1,8 +1,9 @@
 import Simulation
 import Model
+import Optimizer
 
 CONFIG = {
-    'filename': 'SIM_1',
+    'filename': 'SIM',
 
     'numberStudents': 10000,
     'numberActivities': 10,
@@ -10,12 +11,6 @@ CONFIG = {
     'numberOfActivityPerStudent': 18
 }
 
-s = Simulation.Simulation(CONFIG)
+o = Optimizer.Optimizer()
+o.run()
 
-s.run()
-s.save()
-
-m = Model.Model(CONFIG)
-
-m.fit()
-m.eval()
