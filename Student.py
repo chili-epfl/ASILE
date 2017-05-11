@@ -1,19 +1,28 @@
 import random
+import numpy as np
 
 import utils
 
-class Student:
-
+class LFA:
     def __init__(self, id, nA):
         self.id = id
         self.nA = nA
-        self.counts = [0. for _ in range(self.nA * 2)]
+        self.counts = np.array([0. for _ in range(self.nA + 1)])
+        self.counts[self.nA] += 1
 
-    def runActivity(self, event):
-        result = event.result
-        if result is None:
-            result = 1. if random.random() < utils.sigmoid(sum(
-                [ event.activity.p[k] * self.counts[k] for k in range(len(self.counts)) ]
-            ) + event.activity.p[self.nA * 2]) else 0.
-        self.counts[event.activity.id + (self.nA if result == 1. else 0)] += 1.
-        return result
+    def runActivity(self, activity):
+        success = random.random() < utils.proba(activity, self.counts)
+        self.counts[activity.id] += 1.
+        return (1. if success else 0.)
+
+class PFA:
+    def __init__(self, id, nA):
+        self.id = id
+        self.nA = nA
+        self.counts = np.array([0. for _ in range(2 * self.nA + 1)])
+        self.counts[2 * self.nA] += 1
+
+    def runActivity(self, activity):
+        success = random.random() < utils.sigmoid(np.dot(self.count, activity.p))
+        self.counts[activity.id + (0 if success else self.nA)] += 1.
+        return (1. if success else 0.)

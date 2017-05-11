@@ -1,36 +1,34 @@
 import random
+import numpy as np
 
 import utils
 
-import Activity as A
-import Student as S
-import Event as E
+import Activity
+import Student
+import Event
 
 class Model:
 
-    def __init__(self, nA=10):
+    def __init__(self, nA=8):
         self.activities = []
         self.students = []
         self.events = []
         self.nA = nA
 
-    def init(self, nS, events):
-        self.activities = [A.Activity(id, self.nA) for id in range(self.nA)]
-        self.students = [S.Student(id, self.nA) for id in range(nS)]
+    def init(self, events):
+        self.activities = [Activity.LFA(id, self.nA) for id in range(self.nA)]
         self.events = []
         for e in events:
-            ev = E.Event(
-                activity=self.activities[e.activity.id],
-                student=self.students[e.student.id],
-                result=e.result
+            ev = Event.Event(
+                activity= self.activities[e.activity.id],
+                result=e.result,
+                counts=np.copy(e.counts)
             )
             self.events.append(ev)
-            ev.counts = list(ev.student.counts)
-            ev.student.runActivity(ev)
             ev.activity.events.append(ev)
 
-    def fit(self, nS=100, events=[]):
-        self.init(nS, events)
+    def fit(self, events=None):
+        if events is not None:
+            self.init(events)
         for a in self.activities:
             a.fit()
-
