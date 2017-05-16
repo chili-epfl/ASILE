@@ -1,6 +1,7 @@
 import random
 import math
 
+
 class Event:
 
     def __init__(self, activity=None, student=None, result=True, counts=None):

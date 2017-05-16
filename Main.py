@@ -1,27 +1,35 @@
-import Simulation
-import Model
-import Optimizer
+from simulation import *
+from model import *
+from optimizer import *
 
 import numpy as np
 import utils
 
-################################################
-################## CONFIG ######################
-################################################
-nA = 10
+'''
+Configuration
+'''
+
+
+nA = 5
 nS = 1000
 nAS = 5
 
-################################################
-################## MAIN ########################
-################################################
-s = Simulation.Simulation(nA=nA)
-for a in s.activities[:2]:
+
+'''
+Core of the program
+'''
+
+
+s = SimulationLFA(nA=nA)
+m = ModelLFA(nA=nA)
+
+for a in s.activities[:5]:
     print('ACTIVITY', a.id, a.p)
 s.run(nS=1000, interactions=int(0.8 * nA * 1000))
 testEvents = list(s.events)
 
-m = Model.Model(nA=nA)
+
+
 def test(nStudent, model, sim):
     print('\n>>>>>>>>>>\n>>>>>>>>>>\n')
     print('TEST=', nStudent)
@@ -38,13 +46,7 @@ def test(nStudent, model, sim):
     print('evaluating . . .')
     print('SCORE=', utils.eval(nStudent, model, sim, testEvents))
 
-'''
-test(10, m, s)
-test(30, m, s)
-test(100, m, s)
-test(300, m, s)
-test(1000, m, s)
-'''
+
 test(10, m, s)
 test(100, m, s)
 test(300, m, s)
@@ -52,34 +54,34 @@ test(1000, m, s)
 test(3000, m, s)
 test(10000, m, s)
 
-'''
+
 results = {
-	'random': [],
-	'epsilon': [],
-	'bandit': []
+    'random': [],
+    'epsilon': [],
+    'bandit': []
 }
 
-for i in range(5):
-	print('\n')
-	print('ITERATION', i, '\n')
-	s = Simulation.Simulation(nA=nA)
+for i in range(1):
+    print('\n')
+    print('ITERATION', i, '\n')
+    s = SimulationLFA(nA=nA)
 
-	print('>>>>>>>>>>')
-	o = Optimizer.RandomOptimizer(nA=nA, nS=nS)
-	s.runWithOptimizer(o, nAS, nS)
-	results['random'].append(s.evaluateOptimality())
+    print('>>>>>>>>>>', 'RANDOM')
+    o = RandomOptimizer(nA=nA)
+    s.runWithOptimizer(o, nAS, nS)
+    results['random'].append(s.evaluateOptimality())
 
-	print('>>>>>>>>>>')
-	o = Optimizer.EpsilonOptimizer(nA=nA, nS=nS)
-	s.runWithOptimizer(o, nAS, nS)
-	results['epsilon'].append(s.evaluateOptimality())
+    print('>>>>>>>>>>', 'EPSILON')
+    o = EpsilonOptimizer(nA=nA)
+    s.runWithOptimizer(o, nAS, nS)
+    results['epsilon'].append(s.evaluateOptimality())
 
-	print('>>>>>>>>>>')
-	o = Optimizer.BanditOptimizer(nA=nA, nS=nS)
-	s.runWithOptimizer(o, nAS, nS)
-	results['bandit'].append(s.evaluateOptimality())
+    print('>>>>>>>>>>', 'BANDIT')
+    o = BanditOptimizer(nA=nA)
+    s.runWithOptimizer(o, nAS, nS)
+    results['bandit'].append(s.evaluateOptimality())
 
-	print('>>>>>>>>>>')
+    print('>>>>>>>>>>')
 
 print('\n\n>>>>>>>>>>\n>>>>>>>>>>\n>>>>>>>>>>\n\n\n')
 
@@ -87,5 +89,5 @@ print('STUDENTS', nS)
 print('RANDOM', np.mean(results['random']), np.std(results['random']))
 print('EPSILO', np.mean(results['epsilon']), np.std(results['epsilon']))
 print('BANDIT', np.mean(results['bandit']), np.std(results['bandit']))
-'''
+
 print('\n>>>>>>>>>>\n>>>>>>>>>>\n')
