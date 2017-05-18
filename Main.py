@@ -21,10 +21,10 @@ Core of the program
 
 
 s = SimulationLFA(nA=nA)
-m = ModelLFA(nA=nA)
+m = ModelLFA()
 
 for a in s.activities[:5]:
-    print('ACTIVITY', a.id, a.p)
+    print('ACTIVITY', a.id, a.params)
 s.run(nS=1000, interactions=int(0.8 * nA * 1000))
 testEvents = list(s.events)
 

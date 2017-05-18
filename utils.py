@@ -3,16 +3,27 @@ import sys, os
 
 DEBUG = False
 
-# Disable
+
+'''
+Allows to disable print on stdout
+'''
+
+
+STDOUT = sys.stdout
+
+
 def blockPrint():
     sys.stdout = open(os.devnull, 'w')
 
-# Restore
-def enablePrint():
-    sys.stdout = sys.__stdout__
 
-def sigmoid(x):
-    return 1. / (1. + np.exp(-x))
+def enablePrint():
+    sys.stdout = STDOUT
+
+
+'''
+Utils
+'''
+
 
 def optimal(model, target, counts):
     bestS = 0.
@@ -34,7 +45,3 @@ def eval(n, model, sim, events):
         score += (pm - ps) ** 2.
     score = (score / len(events)) ** 0.5
     return score
-
-
-def proba(activity, counts):
-    return (sigmoid(np.dot(activity.p, counts)))

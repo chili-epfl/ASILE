@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import multiprocessing
 
 import utils
 
@@ -11,20 +12,55 @@ from event import *
 '''
 Model
 '''
-
+def fit(a):
+    a.fit()
+    return a
 
 class Model:
 
-    def __init__(self, nA=10):
-        self.activities = []
-        self.students = []
+    def __init__(self):
+        self.studentModel = None
+        self.activityModel = None
+
+        self.activities = {}
+        self.students = {}
+
         self.events = []
-        self.nA = nA
 
-    def init(self, events):
-        raise Exception('Parent method not implemented')
+    def fit(self, data):
+        for [studentID, activityID, date, result] in data:
 
-    def fit(self, events=None):
+            if studentID not in self.students:
+                self.students[studentID] = self.studentModel(studentID)
+
+            if activityID not in self.activities:
+                self.activities[activityID] = self.activityModel(activityID)
+
+            event = Event(
+                student=self.students[studentID],
+                activity=self.activities[activityID],
+                result=result,
+                date=date,
+                state=None
+            )
+
+            self.events.append(event)
+            self.activities[activityID].events.append(event)
+            self.students[studentID].events.append(event)
+
+        for ev in self.events:
+            ev.state = ev.student.getState(ev.date)
+
+        #for activity in self.activities.values():
+        #    activity.fit()
+
+        pool = multiprocessing.Pool(processes=8)
+        for a in pool.map(fit, self.activities.values()):
+            self.activities[a.id] = a
+        pool.close()
+        pool.join()
+
+    def getProba(self, activityID, studentID):
         raise Exception('Parent method not implemented')
 
 
@@ -33,14 +69,26 @@ ModelLFA
 '''
 
 
-class ModelLFA:
+class ModelLFA(Model):
 
-    def __init__(self, nA=8):
-        self.activities = []
-        self.students = []
+    def __init__(self):
+
+        self.studentModel = StudentLFA
+        self.activityModel = ActivityLFA
+
+        self.activities = {}
+        self.students = {}
+
         self.events = []
-        self.nA = nA
 
+    def getProba(self, activityID, studentID):
+        params = self.activities[activityID].params
+        state = self.students[studentID].getState()
+        state = [ state.get(i,0) for i in range(len(params) - 1) ] + [ 1 ]
+        print(state)
+        return 1. / (1. + np.exp(- np.dot(params, state)))
+
+'''
     def init(self, events):
         self.activities = [ActivityLFA(id, self.nA) for id in range(self.nA)]
         self.events = []
@@ -58,3 +106,4 @@ class ModelLFA:
             self.init(events)
         for a in self.activities:
             a.fit()
+'''

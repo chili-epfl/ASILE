@@ -32,11 +32,11 @@ SimulationLFA
 class SimulationLFA(Simulation):
     def __init__(self, nA=8):
         self.nA = nA
-        self.activities = [ActivityLFA(id, self.nA) for id in range(self.nA)]
+        self.activities = [ActivityLFA(id) for id in range(self.nA)]
 
     def run(self, nS=100, interactions=1000, filename='SIM'):
         self.events = []
-        self.students = [StudentLFA(id, self.nA) for id in range(nS)]
+        self.students = [StudentLFA(id) for id in range(nS)]
 
         studentIDs = list(range(nS))
         random.shuffle(studentIDs)
