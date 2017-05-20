@@ -38,14 +38,14 @@ class ActivityLFA(Activity):
         })
 
     def fit(self):
-        activities = set()
         self.activityListC = {}
+        self.activityList = set()
         for e in self.events:
             for a in e.state:
-                activities.add(a)
+                self.activityList.add(a)
                 self.activityListC[a] = self.activityListC.get(a, 0) + e.state[a]
 
-        self.activityList = list(activities - { self.id })
+        self.activityList = list(self.activityList - { self.id })
 
         X = [
             [ e.state.get(a, 0) for a in self.activityList ] + [ 1 ]

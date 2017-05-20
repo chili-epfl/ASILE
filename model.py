@@ -85,7 +85,6 @@ class ModelLFA(Model):
         params = self.activities[activityID].params
         state = self.students[studentID].getState()
         state = [ state.get(i,0) for i in range(len(params) - 1) ] + [ 1 ]
-        print(state)
         return 1. / (1. + np.exp(- np.dot(params, state)))
 
 '''
