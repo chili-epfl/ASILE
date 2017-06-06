@@ -28,8 +28,6 @@ for a in s.activities[:5]:
 s.run(nS=1000, interactions=int(0.8 * nA * 1000))
 testEvents = list(s.events)
 
-
-
 def test(nStudent, model, sim):
     print('\n>>>>>>>>>>\n>>>>>>>>>>\n')
     print('TEST=', nStudent)
@@ -46,14 +44,12 @@ def test(nStudent, model, sim):
     print('evaluating . . .')
     print('SCORE=', utils.eval(nStudent, model, sim, testEvents))
 
-
 test(10, m, s)
 test(100, m, s)
 test(300, m, s)
 test(1000, m, s)
 test(3000, m, s)
 test(10000, m, s)
-
 
 results = {
     'random': [],

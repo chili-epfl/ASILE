@@ -46,10 +46,10 @@ class StudentLFA(Student):
 
     def getState(self, date):
         strdate = str(date)
-        if strdate not in self.states or date is None:
+        if date is None or strdate not in self.states:
             state = {}
             for e in self.events:
-                if e.date <= date or date is None:
+                if date is None or e.date <= date:
                     state[e.activity.id] = 1 + state.get(e.activity.id, 0)
             self.states[strdate] = state
         return self.states[strdate]

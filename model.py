@@ -36,17 +36,7 @@ class Model:
             if activityID not in self.activities:
                 self.activities[activityID] = self.activityModel(activityID)
 
-            event = Event(
-                student=self.students[studentID],
-                activity=self.activities[activityID],
-                result=result,
-                date=date,
-                state=None
-            )
-
-            self.events.append(event)
-            self.activities[activityID].events.append(event)
-            self.students[studentID].events.append(event)
+            self.reportEvent(studentID, activityID, result, date)
 
         for ev in self.events:
             ev.state = ev.student.getState(ev.date)
@@ -59,6 +49,22 @@ class Model:
             self.activities[a.id] = a
         pool.close()
         pool.join()
+
+    def reportEvent(self, studentID, activityID, result, date, withState=False):
+        event = Event(
+            student=self.students[studentID],
+            activity=self.activities[activityID],
+            result=result,
+            date=date,
+            state=self.students[studentID].getState(None) if withState else None
+        )
+
+        self.events.append(event)
+        self.activities[activityID].events.append(event)
+        self.students[studentID].events.append(event)
+
+    def optimalChoice(self, state):
+        raise Exception('Parent method not implemented')
 
     def getProba(self, activityID, studentID):
         raise Exception('Parent method not implemented')
@@ -73,19 +79,39 @@ class ModelLFA(Model):
 
     def __init__(self):
 
+        Model.__init__(self)
+
         self.studentModel = StudentLFA
         self.activityModel = ActivityLFA
 
-        self.activities = {}
-        self.students = {}
-
-        self.events = []
-
     def getProba(self, activityID, studentID):
+        if studentID not in self.students:
+            self.students[studentID] = self.studentModel(studentID)
+
+        if activityID not in self.activities:
+            self.activities[activityID] = self.activityModel(activityID)
+
         params = self.activities[activityID].params
-        state = self.students[studentID].getState()
-        state = [ state.get(i,0) for i in range(len(params) - 1) ] + [ 1 ]
+        state = self.students[studentID].getState(None)
+        state = [ state.get(a,0) for a in self.activities[activityID].activityList ] + [ 1 ]
         return 1. / (1. + np.exp(- np.dot(params, state)))
+
+    def optimalChoice(self, state):
+        optActivity = None
+        optScore = 0.
+
+        available = [a for a in self.activities.values() if a.id not in state.keys()]
+
+        for activity in available:
+            score = 0.
+            for a in self.activities.values():
+                updatedState = [ 1 if i == activity.id else state.get(i,0) for i in a.activityList ] + [ 1 ]
+                score += 1. / (1. + np.exp(- np.dot(a.params, updatedState)))
+            if score > optScore:
+                optScore = score
+                optActivity = activity.id
+
+        return optActivity
 
 '''
     def init(self, events):

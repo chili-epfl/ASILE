@@ -21,16 +21,14 @@ STDOUT = sys.stdout
 def blockPrint():
     sys.stdout = open(os.devnull, 'w')
 
-
 def enablePrint():
     sys.stdout = STDOUT
-
 
 '''
 Utils
 '''
 
-def getSQLData():
+def getSQLData(subset):
 
     SQLQuery = """
     SELECT DISTINCT
@@ -53,7 +51,7 @@ def getSQLData():
     data.Grade = data.Grade.apply(pd.to_numeric, errors='coerce')
     data.ExamDate = data.ExamDate.apply(pd.to_datetime)
     data.CourseID = data.CourseID.apply(lambda x: x.split('(')[0])
-    data = data[data.CourseID != 'CS-522']
+    data = data[data.CourseID.isin(subset)]
     data.dropna(axis=0, inplace=True)
 
     def z(obj, key):

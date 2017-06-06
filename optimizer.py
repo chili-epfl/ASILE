@@ -16,7 +16,7 @@ Optimizer
 
 class Optimizer:
 
-    def __init__(self, nA=8):
+    def __init__(self, nA):
         self.nA = nA
         self.history = {}
 
@@ -34,7 +34,7 @@ RandomOptimizer
 
 class RandomOptimizer(Optimizer):
 
-    def __init__(self, nA=8):
+    def __init__(self, nA):
         self.nA = nA
         self.history = {}
 
@@ -59,7 +59,7 @@ Bandit Optimizer
 
 class BanditOptimizer(Optimizer):
 
-    def __init__(self, nA=8):
+    def __init__(self, nA):
         self.nA = nA
         self.activities = [ActivityLFA(id, self.nA) for id in range(self.nA)]
 
@@ -147,7 +147,7 @@ Epsilon Optimizer
 
 class EpsilonOptimizer(Optimizer):
 
-    def __init__(self, nA=8, nS=100):
+    def __init__(self, nA, nS):
         self.nA = nA
         self.nS = nS
         self.history = {}
