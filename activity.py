@@ -23,12 +23,14 @@ ActivityLFA
 
 
 class ActivityLFA(Activity):
-    def __init__(self, id):
+    def __init__(self, id, D):
         self.id = id
-        self.params = np.array([ -1 ])
-        self.error = np.array([ 10. ])
+        self.D = D
+
+        self.params = np.array([ 0. ] * (self.D + 1))
+        self.error = np.array([ 10. ] * (self.D + 1))
+        self.counts = np.array([ 0. ] * self.D)
         self.events = []
-        self.activityListC = {}
 
     def __str__(self):
         return str({
@@ -38,17 +40,13 @@ class ActivityLFA(Activity):
         })
 
     def fit(self):
-        self.activityListC = {}
-        self.activityList = set()
+        self.counts = np.array([ 0. ] * self.D)
         for e in self.events:
             for a in e.state:
-                self.activityList.add(a)
-                self.activityListC[a] = self.activityListC.get(a, 0) + e.state[a]
-
-        self.activityList = list(self.activityList - { self.id })
+                self.counts[a] += 1
 
         X = [
-            [ e.state.get(a, 0) for a in self.activityList ] + [ 1 ]
+            [ e.state.get(a, 0) if a != self.id else 0 for a in range(self.D) ] + [ 1 ]
             for e in self.events
         ]
         y = [e.result for e in self.events]
@@ -69,14 +67,16 @@ class ActivityLFA(Activity):
 
         except Exception as err:
             print('Exception:', err)
-
-            LR = linear_model.LogisticRegression(
-                solver='liblinear',
-                fit_intercept=False
-            )
-            LR.fit(X,y)
-            self.params = LR.coef_[0]
-            self.error = [10. for _ in self.params]
+            try :
+                LR = linear_model.LogisticRegression(
+                    solver='liblinear',
+                    fit_intercept=False
+                )
+                LR.fit(X,y)
+                self.params = LR.coef_[0]
+                self.error = [10. for _ in self.params]
+            except Exception as err:
+                print('Exception:', err)
 
         finally:
             utils.enablePrint()

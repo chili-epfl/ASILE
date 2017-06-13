@@ -26,7 +26,7 @@ class Simulation:
         for studentID in range(nS):
             for _ in range(nAS):
                 nextActivityID = optimizer.nextActivity(studentID)
-
+                print('nextActivity', nextActivityID)
                 if nextActivityID is not None:
                     p = self.model.getProba(nextActivityID, studentID)
                     result = 1 if p > random.random() else 0
@@ -35,17 +35,19 @@ class Simulation:
 
 
     def scoreFn(self, e):
-        return 1 if e.activity.id == sim.model.optimalChoice(e.state) else 0
+        return 1 if e.activity.id == self.model.optimalChoice(e.state) else 0
 
     def evaluateOptimality(self):
+        batches = 10
+        n = int( len(self.model.events) / batches )
+        scores = [ 0. ] * batches
 
-        pool = multiprocessing.Pool(processes=8)
-        score = sum(pool.map(self.scoreFn, self.model.events))
-        pool.close()
-        pool.join()
+        for b in range(batches):
+            for e in self.model.events[(b*n):((b+1) * n)]:
+                scores[b] += self.scoreFn(e)
+            scores[b] /= n
 
-        score /= len(self.model.events)
-        return score
+        return scores
 
 '''
 SimulationLFA

@@ -74,14 +74,14 @@ def getSQLData(subset):
     return (data, courses)
 
 def generateGraph(name, activities, labels, thickness, color):
-    r = 6
+    r = 5
     def POSITION(n={ 'n': 0 }):
         x = math.cos(((math.pi * 2) / len(activities)) * n['n']) * r
         y = math.sin(((math.pi * 2) / len(activities)) * n['n']) * r
         n['n'] += 1
         return '\"' + str(x) + ',' + str(y) + '!\"'
 
-    NODE_SIZE_SCALE = lambda x: max(5e-2 * (x ** 0.5), 1e0)
+    NODE_SIZE_SCALE = lambda x: max(5e-2 * (x ** 0.5), 1.2e0)
 
     G = nx.DiGraph()
 
@@ -98,10 +98,10 @@ def generateGraph(name, activities, labels, thickness, color):
     }) for a in activities ])
 
     for a in activities:
-        for i, b in enumerate(a.activityList):
-            if b in [ x.id for x in activities ]:
-                t = thickness(a, b, i)
-                if t > 0.5 and a.activityListC[b] > 50:
+        for b in range(a.D):
+            if b != a.id:
+                t = thickness(a, b)
+                if t > 0.5 and a.counts[b] > 50:
                     G.add_edge(b, a.id, {
                         'penwidth': t
                     })

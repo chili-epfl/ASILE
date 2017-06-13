@@ -8,6 +8,7 @@ from model import Model
 from activity import *
 from student import *
 from event import *
+from model import *
 
 '''
 Optimizer
@@ -60,69 +61,27 @@ Bandit Optimizer
 class BanditOptimizer(Optimizer):
 
     def __init__(self, nA):
+        print('BANDIIIIIIIIIITTTTTTTSSS')
         self.nA = nA
-        self.activities = [ActivityLFA(id, self.nA) for id in range(self.nA)]
-
-        self.history = {}
-
-        self.students = {}
-
-        self.events = []
-
+        self.model = ModelLFA()
+        for id in range(nA):
+            self.model.activities[id] = self.model.activityModel(id)
         self.count = 0
-        self.activityCounts = [1 for _ in range(self.nA)]
-        self.shouldFit = [set() for _ in range(self.nA)]
-
-        self.target = np.array([0. for _ in range(self.nA + 1)])
-        self.targetE = np.array([0. for _ in range(self.nA + 1)])
+        self.fitCount = 10
 
     def nextActivity(self, studentID):
-        target = self.activities[0]
-        if studentID not in self.students:
-            self.students[studentID] = StudentLFA(studentID, self.nA)
-            self.history[studentID] = set()
-
-        student = self.students[studentID]
-        available = [aid for aid in range(
-            self.nA) if aid not in self.history[studentID]]
-        bestA = None
-        bestS = -999999.
-        for aid in available:
-            a = self.activities[aid]
-            if student.counts[a.id] < 1:
-                score = target.p[a.id]
-                if score > bestS:
-                    bestA = a
-                    bestS = score
-        return bestA.id if bestA is not None else None
+        print('next')
+        return self.model.optimalChoice(
+            self.model.students[studentID].getState(self.count) if self.model.students.get(studentID, None) else {}
+        )
 
     def submitResult(self, studentID, activityID, result):
-        if studentID not in self.students:
-            self.students[studentID] = StudentLFA(studentID, self.nA)
-            self.history[studentID] = set()
-
+        print('submit')
         self.count += 1
-        self.activityCounts[activityID] += 1
-
-        if(result == 1):
-            self.history[studentID].add(activityID)
-
-        ev = Event(
-            activity=self.activities[activityID],
-            student=self.students[studentID],
-            result=result,
-            counts=list(self.students[studentID].counts)
-        )
-        self.events.append(ev)
-        ev.student.runActivity(self.activities[activityID])
-        self.activities[activityID].events.append(ev)
-
-        n = int(self.activityCounts[activityID] ** 0.5)
-        if(n not in self.shouldFit[activityID] and n > 100 ** 0.5):
-            # print(activityID)
-            # print(self.activityCounts)
-            self.shouldFit[activityID].add(n)
-            self.activities[activityID].fit()
+        self.model.reportEvent(studentID, activityID, result, self.count, withState=True)
+        if self.count > self.fitCount ** 2:
+            self.fitCount += 1
+            self.model.parallelFit()
 
     def fit(self):
         X = [e.counts for e in self.events]

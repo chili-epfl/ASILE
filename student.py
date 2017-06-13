@@ -34,10 +34,10 @@ StudentLFA
 
 class StudentLFA(Student):
 
-    def __init__(self, id):
+    def __init__(self, id, D):
+        self.D = D
         self.id = id
         self.events = []
-        self.states = {}
 
     def runActivity(self, activity):
         success = random.random() < utils.proba(activity, self.counts)
@@ -45,11 +45,8 @@ class StudentLFA(Student):
         return (1. if success else 0.)
 
     def getState(self, date):
-        strdate = str(date)
-        if date is None or strdate not in self.states:
-            state = {}
-            for e in self.events:
-                if date is None or e.date <= date:
-                    state[e.activity.id] = 1 + state.get(e.activity.id, 0)
-            self.states[strdate] = state
-        return self.states[strdate]
+        state = {}
+        for e in self.events:
+            if date is None or e.date <= date:
+                state[e.activity.id] = 1 + state.get(e.activity.id, 0)
+        return state
