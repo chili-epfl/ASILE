@@ -42,7 +42,7 @@ class RandomOptimizer(Optimizer):
     def nextActivity(self, studentID):
         if studentID not in self.history:
             self.history[studentID] = set()
-        available = list(set(range(self.nA)) - self.history[studentID])
+        available = list(set(range(1, self.nA)) - self.history[studentID])
         nextA = random.choice(available) if len(available) > 0 else None
         return nextA
 
@@ -61,42 +61,45 @@ Bandit Optimizer
 class BanditOptimizer(Optimizer):
 
     def __init__(self, nA):
-        print('BANDIIIIIIIIIITTTTTTTSSS')
         self.nA = nA
-        self.model = ModelLFA()
+        self.model = ModelLFA(nA)
         for id in range(nA):
-            self.model.activities[id] = self.model.activityModel(id)
-        self.count = 0
-        self.fitCount = 10
+            self.model.activities[id] = self.model.getActivityModel(id)
+        self.count = 1
+        self.activityCounts = [1 for _ in range(self.nA)]
+        self.fitCount = 2
 
     def nextActivity(self, studentID):
-        print('next')
-        return self.model.optimalChoice(
-            self.model.students[studentID].getState(self.count) if self.model.students.get(studentID, None) else {}
-        )
+        optActivities = [None]
+        optScore = -10.
+
+        state = self.model.students[studentID].getState(None) if studentID in self.model.students else {}
+        available = [a.id for a in self.model.activities.values() if a.id not in state and a.id != 0]
+
+        for activityID in available:
+            confidence = 2. * math.log(self.count) / (self.activityCounts[activityID] ** 0.5)
+            #confidence = math.log(self.count) * self.model.activities[0].error[activityID]
+            param = self.model.activities[0].params[activityID]
+            score = param + 2*confidence
+
+            if score > optScore:
+                optScore = score
+                optActivities = [ activityID ]
+            elif score > optScore - 1e-4:
+                optActivities.append(activityID)
+
+        choice = random.choice(optActivities)
+
+        return choice
 
     def submitResult(self, studentID, activityID, result):
-        print('submit')
         self.count += 1
+        self.activityCounts[activityID] += 1
         self.model.reportEvent(studentID, activityID, result, self.count, withState=True)
-        if self.count > self.fitCount ** 2:
+
+        if self.activityCounts[0] > self.fitCount ** 2.5:
             self.fitCount += 1
-            self.model.parallelFit()
-
-    def fit(self):
-        X = [e.counts for e in self.events]
-        y = [e.result for e in self.events]
-        if(0. in y and 1. in y):
-            logit = sm.Logit(y, X)
-            result = logit.fit_regularized(disp=False, method='l1', alpha=1e-2)
-            self.target = np.array(result.params)
-            self.targetE = np.array(result.bse)
-
-        print(target)
-        print(targetE)
-
-        for a in self.activities:
-            a.fit()
+            self.model.activities[0].fit()
 
 
 '''
@@ -109,65 +112,30 @@ class EpsilonOptimizer(Optimizer):
     def __init__(self, nA, nS):
         self.nA = nA
         self.nS = nS
-        self.history = {}
-        self.count = 0
-        for id in range(self.nS):
-            self.history[id] = set()
+        self.model = ModelLFA(nA)
+        for id in range(nA):
+            self.model.activities[id] = self.model.getActivityModel(id)
 
-        self.activities = [ActivityLFA(id, self.nA) for id in range(self.nA)]
-        self.students = {}
-        self.events = []
+        self.count = 1
+        self.studentCount = 0
+        self.fitted = False
 
     def nextActivity(self, studentID):
+        state = self.model.students[studentID].getState(None) if studentID in self.model.students else {}
+        available = [a.id for a in self.model.activities.values() if a.id not in state and a.id != 0]
 
-        if studentID not in self.students:
-            self.students[studentID] = StudentLFA(studentID, self.nA)
-            self.history[studentID] = set()
+        if not self.fitted:
+            return random.choice(available)
 
-        if self.count < int(self.nS):
-            available = [aid for aid in range(
-                self.nA) if aid not in self.history[studentID]]
-            nextA = random.choice(available) if len(available) > 0 else None
-            return nextA
-        target = self.activities[0]
-        student = self.students[studentID]
-        available = [aid for aid in range(
-            self.nA) if aid not in self.history[studentID]]
-        bestA = None
-        bestS = -999999.
-        for aid in available:
-            a = self.activities[aid]
-            if student.counts[a.id] < 1:
-                score = target.p[a.id]
-                if score > bestS:
-                    bestA = a
-                    bestS = score
-        return bestA.id if bestA is not None else None
+        return self.model.optimalChoice(state)
 
     def submitResult(self, studentID, activityID, result):
-
-        if studentID not in self.students:
-            self.students[studentID] = StudentLFA(studentID, self.nA)
-            self.history[studentID] = set()
-
         self.count += 1
+        self.model.reportEvent(studentID, activityID, result, self.count, withState=True)
 
-        if(result == 1):
-            self.history[studentID].add(activityID)
+        if activityID == 0:
+            self.studentCount += 1
 
-        ev = Event(
-            activity=self.activities[activityID],
-            student=self.students[studentID],
-            result=result,
-            counts=list(self.students[studentID].counts)
-        )
-        self.events.append(ev)
-        ev.student.runActivity(self.activities[activityID])
-        self.activities[activityID].events.append(ev)
-
-        if(self.count == int(self.nS)):
-            self.fit()
-
-    def fit(self):
-        for a in self.activities:
-            a.fit()
+        if self.studentCount > self.nS // 10 and not self.fitted:
+            self.fitted = True
+            self.model.activities[0].fit()

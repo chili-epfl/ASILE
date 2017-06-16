@@ -24,29 +24,37 @@ class Simulation:
         self.model.students = {}
 
         for studentID in range(nS):
-            for _ in range(nAS):
+            # The simulated student performs the activities
+            # recommended by the optimizer
+            _n = random.choice([nAS-1, nAS, nAS+1])
+            for _ in range(_n):
                 nextActivityID = optimizer.nextActivity(studentID)
-                print('nextActivity', nextActivityID)
                 if nextActivityID is not None:
                     p = self.model.getProba(nextActivityID, studentID)
                     result = 1 if p > random.random() else 0
                     self.model.reportEvent(studentID, nextActivityID, result, None, withState=True)
                     optimizer.submitResult(studentID, nextActivityID, result)
+            # The simulated student performs the test activity id=0
+            p = self.model.getProba(0, studentID)
+            result = 1 if p > random.random() else 0
+            optimizer.submitResult(studentID, 0, result)
 
 
     def scoreFn(self, e):
-        return 1 if e.activity.id == self.model.optimalChoice(e.state) else 0
+        #return 1 if e.activity.id == self.model.optimalChoice(e.state) else 0
+        return self.model.evaluateChoice(e.state, e.activity.id)
+
 
     def evaluateOptimality(self):
-        batches = 10
-        n = int( len(self.model.events) / batches )
-        scores = [ 0. ] * batches
-
-        for b in range(batches):
-            for e in self.model.events[(b*n):((b+1) * n)]:
-                scores[b] += self.scoreFn(e)
-            scores[b] /= n
-
+        n = 200
+        scores = [ 0. ] * math.ceil(len(self.model.events) / n)
+        optScores = [ 0. ] * math.ceil(len(self.model.events) / n)
+        for i in range(len(self.model.events)):
+            (S, optS) = self.scoreFn(self.model.events[i])
+            scores[i // n] += S
+            optScores[i // n] += optS
+        for i in range(len(scores)):
+            scores[i] /= max(1e-4,optScores[i])
         return scores
 
 '''
@@ -57,7 +65,6 @@ class SimulationLFA(Simulation):
 
     def __init__(self, nA, model):
         Simulation.__init__(self, nA, model)
-
 
     def run(self, nS=100, interactions=1000, filename='SIM'):
         self.events = []

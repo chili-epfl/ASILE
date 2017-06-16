@@ -76,6 +76,9 @@ class Model:
     def optimalChoice(self, state):
         raise Exception('Parent method not implemented')
 
+    def evaluateChoice(self, state, choice):
+        raise Exception('Parent method not implemented')
+
     def getProba(self, activityID, studentID):
         raise Exception('Parent method not implemented')
 
@@ -112,24 +115,27 @@ class ModelLFA(Model):
         return 1. / (1. + np.exp(- np.dot(params, state)))
 
     def optimalChoice(self, state):
-        print('optim')
         optActivity = None
-        optScore = -1.
+        optScore = -10.
 
         available = [a for a in self.activities.values() if a.id not in state.keys()]
-        print(available)
-
         for activity in available:
-            score = 0.
-            for a in self.activities.values():
-                updatedState = [ 1 if i == activity.id else state.get(i,0) for i in range(a.D) ] + [ 1 ]
-                score += 1. / (1. + np.exp(- np.dot(a.params, updatedState)))
-            print(score)
+            score = self.activities[0].params[activity.id]
             if score > optScore:
                 optScore = score
                 optActivity = activity.id
 
         return optActivity
+
+    def evaluateChoice(self, state, choice):
+        optChoice = self.optimalChoice(state)
+        optS = max(1e-3, self.activities[0].params[optChoice])
+        S = max(1e-3, self.activities[0].params[choice])
+        # print()
+        # print('STATE', state)
+        # print('OPTIM', optChoice, optS, 'CHOICE', choice, S)
+        # print()
+        return (S, optS)
 
 '''
     def init(self, events):

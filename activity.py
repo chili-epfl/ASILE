@@ -51,32 +51,37 @@ class ActivityLFA(Activity):
         ]
         y = [e.result for e in self.events]
 
+        # for x in X[:5]:
+        #     print(x)
+        # print(y[:5])
+        # print('\n\n----------------\n\n')
+
         if not utils.DEBUG:
             utils.blockPrint()
 
-        try:
-            logit = sm.Logit(y, X)
-            result = logit.fit_regularized(
-                #start_params=self.params,
-                disp=0,
-                qc_verbose=0,
-                method='l1',
-                alpha=1e-2)
-            self.params = np.array(result.params)
-            self.error = np.array(result.bse)
-
+        # try:
+        #     logit = sm.Logit(y, X)
+        #     result = logit.fit_regularized(
+        #         #start_params=self.params,
+        #         disp=0,
+        #         qc_verbose=0,
+        #         method='l1',
+        #         alpha=1e-1)
+        #     self.params = np.array(result.params)
+        #     self.error = np.array(result.bse)
+        #
+        # except Exception as err:
+        #     print('Exception:', err)
+        try :
+            LR = linear_model.LogisticRegression(
+                solver='liblinear',
+                fit_intercept=False
+            )
+            LR.fit(X,y)
+            self.params = LR.coef_[0]
+            self.error = [10. for _ in self.params]
         except Exception as err:
             print('Exception:', err)
-            try :
-                LR = linear_model.LogisticRegression(
-                    solver='liblinear',
-                    fit_intercept=False
-                )
-                LR.fit(X,y)
-                self.params = LR.coef_[0]
-                self.error = [10. for _ in self.params]
-            except Exception as err:
-                print('Exception:', err)
 
         finally:
             utils.enablePrint()
