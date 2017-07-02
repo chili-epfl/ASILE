@@ -77,10 +77,9 @@ class BanditOptimizer(Optimizer):
         available = [a.id for a in self.model.activities.values() if a.id not in state and a.id != 0]
 
         for activityID in available:
-            confidence = 2. * math.log(self.count) / (self.activityCounts[activityID] ** 0.5)
-            #confidence = math.log(self.count) * self.model.activities[0].error[activityID]
-            param = self.model.activities[0].params[activityID]
-            score = param + 2*confidence
+            confidence = (2. * math.log(self.count) / self.activityCounts[activityID]) ** 0.5
+            param = 1. / (1 + math.exp(- self.model.activities[0].params[activityID] - self.model.activities[0].params[-1]))
+            score = param + confidence
 
             if score > optScore:
                 optScore = score
@@ -97,7 +96,7 @@ class BanditOptimizer(Optimizer):
         self.activityCounts[activityID] += 1
         self.model.reportEvent(studentID, activityID, result, self.count, withState=True)
 
-        if self.activityCounts[0] > self.fitCount ** 2.5:
+        if self.activityCounts[0] > (self.fitCount ** 2.) / 4.:
             self.fitCount += 1
             self.model.activities[0].fit()
 
@@ -109,9 +108,10 @@ Epsilon Optimizer
 
 class EpsilonOptimizer(Optimizer):
 
-    def __init__(self, nA, nS):
+    def __init__(self, nA, nS, eps):
         self.nA = nA
         self.nS = nS
+        self.eps = eps
         self.model = ModelLFA(nA)
         for id in range(nA):
             self.model.activities[id] = self.model.getActivityModel(id)
@@ -136,6 +136,6 @@ class EpsilonOptimizer(Optimizer):
         if activityID == 0:
             self.studentCount += 1
 
-        if self.studentCount > self.nS // 10 and not self.fitted:
+        if not self.fitted and self.studentCount > self.eps:
             self.fitted = True
             self.model.activities[0].fit()

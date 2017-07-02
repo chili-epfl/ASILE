@@ -28,16 +28,8 @@ class ActivityLFA(Activity):
         self.D = D
 
         self.params = np.array([ 0. ] * (self.D + 1))
-        self.error = np.array([ 10. ] * (self.D + 1))
         self.counts = np.array([ 0. ] * self.D)
         self.events = []
-
-    def __str__(self):
-        return str({
-            'id': self.id,
-            'p': self.params,
-            'e': self.error
-        })
 
     def fit(self):
         self.counts = np.array([ 0. ] * self.D)
@@ -50,38 +42,22 @@ class ActivityLFA(Activity):
             for e in self.events
         ]
         y = [e.result for e in self.events]
+        if not 0 in y:
+            y.append(0)
+            X.append([0 for _ in range(self.D + 1)])
+        if not 1 in y:
+            y.append(1)
+            X.append([1 for _ in range(self.D + 1)])
 
-        # for x in X[:5]:
-        #     print(x)
-        # print(y[:5])
-        # print('\n\n----------------\n\n')
-
-        if not utils.DEBUG:
-            utils.blockPrint()
-
-        # try:
-        #     logit = sm.Logit(y, X)
-        #     result = logit.fit_regularized(
-        #         #start_params=self.params,
-        #         disp=0,
-        #         qc_verbose=0,
-        #         method='l1',
-        #         alpha=1e-1)
-        #     self.params = np.array(result.params)
-        #     self.error = np.array(result.bse)
-        #
-        # except Exception as err:
-        #     print('Exception:', err)
         try :
             LR = linear_model.LogisticRegression(
                 solver='liblinear',
-                fit_intercept=False
+                fit_intercept=False,
+                warm_start=True,
+                C=5
             )
             LR.fit(X,y)
             self.params = LR.coef_[0]
             self.error = [10. for _ in self.params]
         except Exception as err:
             print('Exception:', err)
-
-        finally:
-            utils.enablePrint()

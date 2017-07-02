@@ -28,7 +28,7 @@ def enablePrint():
 Utils
 '''
 
-def getSQLData(subset):
+def getSQLData(courses):
 
     SQLQuery = """
     SELECT DISTINCT
@@ -51,7 +51,6 @@ def getSQLData(subset):
     data.Grade = data.Grade.apply(pd.to_numeric, errors='coerce')
     data.ExamDate = data.ExamDate.apply(pd.to_datetime)
     data.CourseID = data.CourseID.apply(lambda x: x.split('(')[0])
-    data = data[data.CourseID.isin(subset)]
     data.dropna(axis=0, inplace=True)
 
     def z(obj, key):
@@ -60,16 +59,16 @@ def getSQLData(subset):
         return obj[key]
 
     _students = {}
-    _courses = {}
+    _courses = {v: k for k,v in courses.items()}
 
     data.StudentID = data.StudentID.apply(lambda x: z(_students, x))
     data.CourseID = data.CourseID.apply(lambda x: z(_courses, x))
 
-    courses = {v: k for k,v in _courses.items()}
-
     data['Result'] = data.Grade.apply(lambda grade: 1 if grade > 3.9 else 0)
     data.sort_values(by='ExamDate', inplace=True)
     data.reset_index(drop=True, inplace=True)
+
+    courses = {v: k for k,v in _courses.items()}
 
     return (data, courses)
 

@@ -127,32 +127,9 @@ class ModelLFA(Model):
 
         return optActivity
 
-    def evaluateChoice(self, state, choice):
-        optChoice = self.optimalChoice(state)
-        optS = max(1e-3, self.activities[0].params[optChoice])
-        S = max(1e-3, self.activities[0].params[choice])
-        # print()
-        # print('STATE', state)
-        # print('OPTIM', optChoice, optS, 'CHOICE', choice, S)
-        # print()
+    def evaluateChoices(self, choices):
+        n = len(choices)
+        p = np.array(self.activities[0].params)
+        optS = sum(np.sort(p)[-n:])
+        S = max(1e-3, sum(p[choices]))
         return (S, optS)
-
-'''
-    def init(self, events):
-        self.activities = [ActivityLFA(id, self.nA) for id in range(self.nA)]
-        self.events = []
-        for e in events:
-            ev = Event(
-                activity=self.activities[e.activity.id],
-                result=e.result,
-                counts=np.copy(e.counts)
-            )
-            self.events.append(ev)
-            ev.activity.events.append(ev)
-
-    def fit(self, events=None):
-        if events is not None:
-            self.init(events)
-        for a in self.activities:
-            a.fit()
-'''
